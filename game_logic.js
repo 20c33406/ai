@@ -115,6 +115,8 @@ const boxClicked = (e) => {
             if (playerHasWon()) {
                 thinger.innerHTML = `${currentPlayer} has won`;
                 game = false;
+                clearAll()
+                update();
             }
         }
 
@@ -162,12 +164,14 @@ const highlightAvailableMoves = (id) => {
 };
 const playerHasWon = () => {
     return winningCombos.some(([a, b, c]) => {
-        return spaces[a].every((val, idx) => val !== null && val === spaces[b][idx] && val === spaces[c][idx]);
+        return spaces[a].every((val, idx) => val.player !== null && val.player === spaces[b][idx].player && val.player === spaces[c][idx].player);
+
     });
 };
 
 const playerHasWonSquare = (num) => {
     return winningCombos.some(([a, b, c]) => {
+        
         return spaces[num][a].player && spaces[num][a].player === spaces[num][b].player && spaces[num][a].player === spaces[num][c].player;
     });
     
