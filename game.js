@@ -11,12 +11,9 @@ class Game {
 
     constructor(){
         this.on = true;
-        this.O_TEXT = 'O';
-        this.X_TEXT = 'X';
-        this.currentPlayer = this.X_TEXT;
-        this.bot = this.O_TEXT
-        this.player = this.X_TEXT
-        this.board = Array(9).fill(null).map(() => Array(9).fill(null));
+        this.playerX = 1;
+        this.playerO = 2;
+        this.board = Array(9).fill(null).map(() => Array(9).fill(0));
         this.winningCombos = [
         [0, 1, 2],
         [3, 4, 5],
@@ -30,7 +27,7 @@ class Game {
         let k = 0
         for(let i=0;i<9;i++){
             for(let j=0;j<9;j++){
-                this.board[i][j] = new space(k,j,i,null,true)
+                this.board[i][j] = new space(k,j,i,0,true)
                 k++
             }
         }
@@ -42,19 +39,12 @@ class Game {
 
      
     displayBoard = () => {
-        console.log(this.board.map(row => row.map(space => space.player)));
+        console.table(this.board.map(row => row.map(space => space.player)));
     }
 
 
-    fillArray = () => {
-        let k = 0
-        for(let i=0;i<9;i++){
-            for(let j=0;j<9;j++){
-                this.board[i][j] = new space(k,j,i,null,true)
-                k++
-            }
-        }
-    }
+
+    
 
     getSpaceById = (e) => {
         for(let i=0;i<9;i++){
@@ -83,50 +73,21 @@ class Game {
 
     }
 
-    startGame = () => {
-        boxes.forEach(box => box.addEventListener('click', boxClicked));
-        restartBtn.addEventListener('click', restart);
-        restartBtn.removeEventListener('click', startGame);
-        this.on = true;
-        lastid = null;
-        this.board = Array(9).fill(null).map(() => Array(9).fill(null));
-        fillArray();
-        thinger.innerHTML = 'Noughts and Crosses';
-        this.currentPlayer = this.X_TEXT;
-        update();
-    };
-
-    
-    
-    botChoose = () => {
-        let gameState = this.board
-        
-    }
 
 
-    botPlace = (e) => {
-        if(!this.on) return;
-        chooseSpace(getElementById(botChoose()))
-    }
-
-
-    updatePlayerTurn = (e) => {
-        thinger.innerHTML = this.currentPlayer === this.X_TEXT ? `${this.O_TEXT}'s turn` : `${this.X_TEXT}'s turn`;
-    };
-
-    markSquareAsWon = (big) => {
+    markSquareAsWon = (playerId, big) => {
 
         for (let i = 0; i < 81; i++) {
             let tspace = getSpaceById(i)
             console.log(big)
             console.log(tspace.bigid)
             if(tspace.bigid == big){
-                tspace.player = this.currentPlayer
+                tspace.player = playerId
             }
         }
         
-        thinger.innerHTML = `${this.currentPlayer} has won a square`; 
-        thinger.innerHTML = this.currentPlayer === this.X_TEXT ? `${this.O_TEXT}'s turn` : `${this.X_TEXT}'s turn`;
+        thinger.innerHTML = `${playerId} has won a square`; 
+        thinger.innerHTML = playerId === this.playerX ? `${this.playerO}'s turn` : `${this.playerX}'s turn`;
         
     };
 
@@ -136,7 +97,7 @@ class Game {
             lastspace = getSpaceById(id)
             newspace = getSpaceById(i)
 
-            if((!newspace.player) && (lastspace.smallid == newspace.bigid || this.board[lastspace.smallid].every(val => val.player !== null))){
+            if((newspace.player>0) && (lastspace.smallid == newspace.bigid || this.board[lastspace.smallid].every(val => val.player !== 0))){
                 newspace.available=true
             }
         }
@@ -146,59 +107,100 @@ class Game {
         
     };
     playerHasWon = () => {
-        return this.winningCombos.some(([a, b, c]) => {
-            return this.board[a].every((val, idx) => val.player !== null && val.player === this.board[b][idx].player && val.player === this.board[c][idx].player);
+        let winIndicator =  this.winningCombos.some(([a, b, c]) => {
+            if(this.board[a].every((val, idx) => val.player !== 0 && val.player === this.board[b][idx].player && val.player === this.board[c][idx].player)){
+                return(this.board[a][0].player)
+            }
         });
+        if(winIndicator){
+            return winIndicator
+        } else if(this.isFilled()) {
+            return 0
+        }   else {
+            return false
+        }
     };
 
     playerHasWonSquare = (num) => {
-        return this.winningCombos.some(([a, b, c]) => {
-            return this.board[num][a].player && this.board[num][a].player === this.board[num][b].player && this.board[num][a].player === this.board[num][c].player;
+        let winIndicator= this.winningCombos.some(([a, b, c]) => {
+            if(this.board[num][a].player!=0 && this.board[num][a].player === this.board[num][b].player && this.board[num][a].player === this.board[num][c].player){
+                return(this.board[num][a].player)
+            }
         });
-        
-        
+        if(winIndicator){
+            return winIndicator
+        }   else {
+            return false
+        }
     };
 
 
 
     isFilled = (num) => {
-        return this.board[num].every(val => val !== null);
+        return this.board[num].every(val => val.player !== 0);
     };
 
-    chooseSpace = (e) => {
+    chooseSpace = (playerId, tempid) => {
 
-        restartBtn.innerText = 'Restart Game';
-        tempid = parseInt(e.target.id);
 
-        tempspace = getSpaceById(tempid)
+        let tempspace = this.getSpaceById(tempid)
+   
 
 
         if (tempspace.available) {
 
             updatePlayerTurn(e);
-            tempspace.player = this.currentPlayer
+            tempspace.player = playerId
 
             if (playerHasWonSquare(tempspace.bigid)) {
                 markSquareAsWon(tempspace.bigid);
-                if (playerHasWon()) {
-                    thinger.innerHTML = `${this.currentPlayer} has won`;
+                if (playerHasWon()!==0) {
+                    thinger.innerHTML = `${playerId} has won`;
                     this.on = false;
                 }
             }
-
-            this.currentPlayer = this.currentPlayer === this.X_TEXT ? this.O_TEXT : this.X_TEXT;
             highlightAvailableMoves(tempspace.id);
         }
         update();
     }
 
+    get1DArrayFormatted(playerId){
+        return this.board.reduce((array, line) => array.concat(
+      line.map((cellValue) => {
+        if (cellValue.player === 0) return 0;
+        else if (cellValue.player === playerId) return 1;
+        return -1;
+      })
+    ), []);
+    };
 
+    get1DArrayFiltered(playerId){
+    // this function returns the board in a single array with
+    // only the playerId chips appearing
+    return this.board.reduce((array, line) => array.concat(
+      line.map((cellValue) => {
+        if (cellValue.player === playerId) return 1;
+        else return 0;
+      })
+    ), []);
+  }
     
-
-
-
-    
-
+    getConvolutionalVol(playerId){
+    // this function aims to return a 3D array : 6*7*2 for the 2 players' chips
+    // The first unit in the depth is the playerId game
+    const opponentId = playerId === 1 ? 2 : 1;
+    const vol = {
+      sx: 9,
+      sy: 9,
+      depth: 2,
+      w: new Float64Array(this.get1DArrayFiltered(playerId).concat(this.get1DArrayFiltered(opponentId))),
+      dw: new Float64Array(9 * 9 * 2).fill(0),
+    }
+    return vol;
+  }
 }
-game = new Game();
-game.displayBoard();
+
+
+
+
+module.exports.Game = Game;
