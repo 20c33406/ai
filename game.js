@@ -1,3 +1,7 @@
+
+
+
+
 class space {
         constructor(id, smallid, bigid, player, available){
             this.id = id
@@ -115,9 +119,9 @@ class Game {
         if(winIndicator){
             return winIndicator
         } else if(this.isFilled()) {
-            return 0
+            return -1
         }   else {
-            return false
+            return 0
         }
     };
 
@@ -154,10 +158,15 @@ class Game {
 
             if (playerHasWonSquare(tempspace.bigid)) {
                 markSquareAsWon(tempspace.bigid);
-                if (playerHasWon()!==0) {
+                if (playerHasWon()>0) {
                     thinger.innerHTML = `${playerId} has won`;
                     this.on = false;
-                }
+                } else if (this.playerHasWon()==-1){
+                    
+                        thinger.innerHTML = `Draw`;
+                        this.on = false;
+                    }
+                )
             }
             highlightAvailableMoves(tempspace.id);
         }
